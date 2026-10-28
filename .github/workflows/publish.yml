@@ -1,37 +1,17 @@
-name: Publish static build to gh-pages
+name: Unpublish gh-pages
 
 on:
   push:
     branches: [main]
-    paths: [site.json, .github/workflows/publish.yml]
   workflow_dispatch:
 
 permissions:
   contents: write
 
-concurrency:
-  group: publish
-  cancel-in-progress: true
-
 jobs:
-  publish:
+  unpublish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download and verify build
-        run: |
-          URL=$(jq -r .url site.json)
-          SHA=$(jq -r .sha256 site.json)
-          curl -fsSL --retry 4 "$URL" -o site.tgz
-          echo "$SHA  site.tgz" | sha256sum -c -
-          mkdir out && tar -xzf site.tgz -C out
-          touch out/.nojekyll
-      - name: Push to gh-pages
-        run: |
-          cd out
-          git init -b gh-pages
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Publish build $(jq -r .commit ../site.json)"
-          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+      - name: Delete gh-pages branch
+        run: git push origin --delete gh-pages || true
